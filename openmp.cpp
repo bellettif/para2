@@ -44,7 +44,7 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
-    #pragma omp parallel private(dmin) 
+    //#pragma omp parallel private(dmin)
     {
     numthreads = omp_get_num_threads();
     for( int step = 0; step < NSTEPS; step++ )
@@ -55,7 +55,7 @@ int main( int argc, char **argv )
         //
         //  compute all forces
         //
-        #pragma omp for reduction (+:navg) reduction(+:davg)
+        //#pragma omp for reduction (+:navg) reduction(+:davg)
         for( int i = 0; i < n; i++ )
         {
             particles[i].ax = particles[i].ay = 0;
@@ -64,7 +64,11 @@ int main( int argc, char **argv )
             double x = particles[i].x;
             double y = particles[i].y;
 
-            #pragma omp for reduction (+:ax) reduction(+:ay)
+            //#pragma omp for reduction (+:ax) reduction(+:ay)
+            #pragma omp parallel for      \
+              default(shared) private(i) private(x) private(y)  \
+              schedule(static,128)      \
+              reduction (+:ax) reduction (+:ay) reduction (+:navg) reduction (+:davg) reduction (min:dmin)
             for (int j = 0; j < n; j++ ){
 
                 double dx = x - particles[j].x;

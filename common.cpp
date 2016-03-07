@@ -148,7 +148,6 @@ void move( particle_t &p )
         p.vy = -p.vy;
     }
 
-
     assert(p.y >= 0.0);
     assert(p.y <= size);
 

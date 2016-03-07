@@ -32,7 +32,7 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    int n = read_int( argc, argv, "-n", 1000 );
+    int n = read_int( argc, argv, "-n", 10000 );
     char *savename = read_string( argc, argv, "-o", NULL );
     char *sumname = read_string( argc, argv, "-s", NULL );
     
@@ -177,7 +177,7 @@ int main( int argc, char **argv )
                    block_y,
                    n_block_x,
                    n_block_y,
-                   1, 1,
+                   4, 4,
                    local_partition,
                    local_n_particles,
                    n);

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 project(CS267_HW2)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 find_package(MPI REQUIRED)
 
@@ -11,8 +11,8 @@ set(SOURCE_FILES
     #autograder.cpp
     common.cpp
     common.h
-    #mpi.cpp
-    openmp.cpp
+    mpi.cpp
+    #openmp.cpp
     #pthreads.cpp
     #serial.cpp
     )
