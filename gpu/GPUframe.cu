@@ -57,15 +57,24 @@ __global__ void move_particles(region *r, const int offset){
 
 }
 
+__global__ void broadcast_locations(region *r, const int * global_offset, const int offset){
+
+    int i = threadIdx.x;
+
+    if(i >= r->n_global_particles - offset - *global_offset) return;
+
+    r->global_particles[i + offset + *global_offset] = r->shared_particles[i + offset];
+
+}
 
 __global__ void simulate(region* r, const int stride,
                          const int n_r_x, int const n_r_y,
+                         int * global_offset,
                          const int N_BLOCKS,
                          const int N_STEPS){
 
     int block_idx = blockIdx.x;
     int block_idy = blockIdx.y;
-    int offset;
 
     if(block_idx >= n_r_x || block_idy >= n_r_y) return;
 
@@ -92,12 +101,22 @@ __global__ void simulate(region* r, const int stride,
         }
 
         for(int b = 0; b < N_BLOCKS; ++b){
+
+            if(b != region_idx) continue;
+
             if(b == 0){
-                offset = 0;
-            }else{
-                offset += (target_region - 1)->n_shared_particles;
+                *global_offset = 0;
             }
-            broadcast_locations(target_region, offset);
+
+            if(threadIdx.x == 0) {
+                for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
+                    broadcast_locations <<< 1, NUM_THREADS >>> (target_region, global_offset, micro_step * NUM_THREADS);;
+                    cudaThreadSynchronize();
+                }
+            }
+
+            *global_offset += target_region->n_shared_particles;
+
         }
 
     }

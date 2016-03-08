@@ -32,7 +32,7 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    int n = read_int( argc, argv, "-n", 10000 );
+    int n = read_int( argc, argv, "-n", 500 );
     char *savename = read_string( argc, argv, "-o", NULL );
     char *sumname = read_string( argc, argv, "-s", NULL );
     
@@ -177,7 +177,6 @@ int main( int argc, char **argv )
                    block_y,
                    n_block_x,
                    n_block_y,
-                   1, 1,
                    local_partition,
                    local_n_particles,
                    n);
@@ -235,6 +234,8 @@ int main( int argc, char **argv )
             MPI_Reduce(&frame.davg,&rdavg,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
             MPI_Reduce(&frame.navg,&rnavg,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
             MPI_Reduce(&frame.dmin,&rdmin,1,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
+
+            //assert(rdmin > 0.4);
 
             if (rank == 0){
 

@@ -38,14 +38,13 @@ public:
     MPIVectFrame(const int _block_stride,
              const int _block_x, const int _block_y,
              const int _n_block_x, const int _n_block_y,
-             const int _n_x, const int _n_y,
              particle_t *particles, const int _n_particles,
              const int tot_n_particles) :
             size(sqrt(density * tot_n_particles)),
-            delta_x(sqrt(density * tot_n_particles) / ((double) _n_x * _n_block_x)),
-            delta_y(sqrt(density * tot_n_particles) / ((double) _n_y * _n_block_y)),
-            n_x(_n_x),
-            n_y(_n_y),
+            delta_x(cutoff),
+            delta_y(cutoff),
+            n_x(sqrt(density * tot_n_particles) / cutoff * _n_block_x),
+            n_y(sqrt(density * tot_n_particles) / cutoff * _n_block_y),
             max_n_particles(tot_n_particles),
             x_min(_block_x * sqrt(density * tot_n_particles) / ((double) _n_block_x)),
             x_max((_block_x + 1) * sqrt(density * tot_n_particles) / ((double) _n_block_x)),
@@ -62,6 +61,10 @@ public:
             y_offset(_block_y * sqrt(density * tot_n_particles) / ((double) _n_block_y)),
             mpicom(rank)
     {
+
+        navg = 0;
+        dmin = 1.0;
+        davg = 0.0;
 
 #ifdef GEN_DEBUG
         std::cout << "-1: particles in frame " << _n_particles << " " << rank << std::endl;
@@ -416,12 +419,18 @@ public:
             // Interaction with particles in the same cell
             for (int i = 0; i < part_grid[x_idx][y_idx].size(); ++i) {
                 apply_force(part, *(part_grid[x_idx][y_idx].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                //assert(dmin > 0.4);
+#endif
             }
 
             // South west neighboring cell
             if (x_idx > 0 && y_idx > 0) {
                 for (int i = 0; i < part_grid[x_idx - 1][y_idx - 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx - 1][y_idx - 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -429,6 +438,9 @@ public:
             if (y_idx > 0) {
                 for (int i = 0; i < part_grid[x_idx][y_idx - 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx][y_idx - 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -436,6 +448,9 @@ public:
             if (x_idx < n_x - 1 && y_idx > 0) {
                 for (int i = 0; i < part_grid[x_idx + 1][y_idx - 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx + 1][y_idx - 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -443,6 +458,9 @@ public:
             if (x_idx > 0) {
                 for (int i = 0; i < part_grid[x_idx - 1][y_idx].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx - 1][y_idx].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                   //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -450,6 +468,9 @@ public:
             if (x_idx < n_x - 1) {
                 for (int i = 0; i < part_grid[x_idx + 1][y_idx].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx + 1][y_idx].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -457,6 +478,9 @@ public:
             if (x_idx > 0 && y_idx < n_y - 1) {
                 for (int i = 0; i < part_grid[x_idx - 1][y_idx + 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx - 1][y_idx + 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -464,6 +488,9 @@ public:
             if (y_idx < n_y - 1) {
                 for (int i = 0; i < part_grid[x_idx][y_idx + 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx][y_idx + 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -471,6 +498,9 @@ public:
             if (x_idx < n_x - 1 && y_idx < n_y - 1) {
                 for (int i = 0; i < part_grid[x_idx + 1][y_idx + 1].size(); ++i) {
                     apply_force(part, *(part_grid[x_idx + 1][y_idx + 1].at(i)), &dmin, &davg, &navg);
+#ifdef CHECK_ASSERT
+                    //assert(dmin > 0.4);
+#endif
                 }
             }
 
@@ -551,7 +581,7 @@ public:
                 NEs_buffer.push_back(part);
             }
 
-            next_part_grid[x_idx][y_idx].push_back(&mem.at(i));
+            part_grid[x_idx][y_idx].push_back(&mem.at(i));
 
         }
 
