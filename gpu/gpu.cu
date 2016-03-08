@@ -10,7 +10,6 @@
 #include "common.h"
 #include "GPUframe.cuh"
 
-
 int main( int argc, char **argv )
 {    
     // This takes a few seconds to initialize the runtime
@@ -66,10 +65,10 @@ int main( int argc, char **argv )
     for(int i = 0; i < n_block_x; ++i){
         for(int j = 0; j < n_block_y; ++j){
             region &target = all_regions[i * block_stride + j];
-            target.x_min = cutoff * i;
-            target.x_max = cutoff * (i + 1);
-            target.y_min = cutoff * j;
-            target.y_max = cutoff * (j + 1);
+            target.x_min = max(cutoff * (i - 1), 0.0);
+            target.x_max = min(cutoff * (i + 2), size);
+            target.y_min = max(cutoff * (j - 1), 0.0);
+            target.y_max = min(cutoff * (j + 2), size);
             target.global_particles = d_particles;
             target.n_global_particles = n;
         }
