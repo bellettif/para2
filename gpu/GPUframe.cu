@@ -10,26 +10,7 @@
  */
 
 
-#pragma once
-
-#include <cuda.h>
-
-#include "physics.cuh"
-#include "common.h"
-
-#define density 0.0005
-
-typedef struct {
-    double x_min;
-    double x_max;
-    double y_min;
-    double y_max;
-    particle_t* global_particles;
-    int n_global_particles;
-    particle_t* shared_particles;
-    int n_shared_particles;
-} region;
-
+#include "GPUframe.cuh"
 
 __global__ void apply_forces(region *r, const int offset){
 
@@ -42,36 +23,41 @@ __global__ void apply_forces(region *r, const int offset){
     part.ay = 0;
 
     for(int j = 0; j < r->n_shared_particles; ++j){
-        apply_force(part, r->shared_particles[j]);
+        apply_force_gpu(part, r->shared_particles[j]);
     }
 
 }
 
-__global__ void move_particles(region *r, const int offset){
+__global__ void find_particles(region *r){
 
-    int i = threadIdx.x;
+    int n_shared_particles = 0;
 
-    if(i >= r->n_shared_particles - offset) return;
+    for(int i = 0; i < r->n_global_particles; ++i) {
+        particle_t part = r->global_particles[i];
+        if (part.x >= r->x_min && part.x < r->x_max && part.y >= r->y_min && part.y < r->y_max) {
+            r->shared_particles[n_shared_particles] = part;
+            r->shared_particle_idx[n_shared_particles] = i;
+            ++ n_shared_particles;
+        }
+    }
 
-    move(*(r->shared_particles + offset + i));
+    r->n_shared_particles = n_shared_particles;
 
 }
 
-__global__ void broadcast_locations(region *r, const int * global_offset, const int offset){
+__global__ void broadcast_locations(region *r, const int offset){
 
     int i = threadIdx.x;
 
-    if(i >= r->n_global_particles - offset - *global_offset) return;
+    if(i >= r->n_global_particles - offset) return;
 
-    r->global_particles[i + offset + *global_offset] = r->shared_particles[i + offset];
+    r->global_particles[r->shared_particle_idx[i + offset]] = r->shared_particles[i + offset];
 
 }
 
 __global__ void simulate(region* r, const int stride,
                          const int n_r_x, int const n_r_y,
-                         int * global_offset,
-                         const int N_BLOCKS,
-                         const int N_STEPS){
+                         const double size){
 
     int block_idx = blockIdx.x;
     int block_idy = blockIdx.y;
@@ -82,52 +68,30 @@ __global__ void simulate(region* r, const int stride,
 
     region* target_region = r + region_idx;
 
-    for(int step = 0; step < N_STEPS; ++ step){
+    if(threadIdx.x == 0) find_particles <<<1, 1>>>(target_region);
 
-        find_particles(target_region);
-
-        if(threadIdx.x == 0) {
-            for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-                apply_forces <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);
-                cudaThreadSynchronize();
-            }
+    if(threadIdx.x == 0) {
+        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
+            apply_forces <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);
+            __syncthreads();
         }
-
-        if(threadIdx.x == 0) {
-            for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-                move_particles <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);
-                cudaThreadSynchronize();
-            }
-        }
-
-        for(int b = 0; b < N_BLOCKS; ++b){
-
-            if(b != region_idx) continue;
-
-            if(b == 0){
-                *global_offset = 0;
-            }
-
-            if(threadIdx.x == 0) {
-                for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-                    broadcast_locations <<< 1, NUM_THREADS >>> (target_region, global_offset, micro_step * NUM_THREADS);;
-                    cudaThreadSynchronize();
-                }
-            }
-
-            *global_offset += target_region->n_shared_particles;
-
-        }
-
     }
 
-}
+    if(threadIdx.x == 0) {
+        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
+            move_gpu <<< 1, NUM_THREADS >>> (
+                target_region->shared_particles + micro_step * NUM_THREADS,
+                target_region->n_shared_particles + micro_step * NUM_THREADS,
+                size);
+            __syncthreads();
+        }
+    }
 
-__device__ inline void get_idx(const double &x, const double &y,
-                               const double &delta_x, const double &delta_y,
-                               int &x_idx, int &y_idx){
-
-    x_idx = (int) (x / delta_x);
-    y_idx = (int) (y / delta_y);
+    if(threadIdx.x == 0) {
+        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
+            broadcast_locations <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);;
+            __syncthreads();
+        }
+    }
 
 }

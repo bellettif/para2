@@ -4,8 +4,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <math.h>
 #include <cuda.h>
+
 #include "common.h"
+#include "GPUframe.cuh"
 
 
 int main( int argc, char **argv )
@@ -52,20 +55,51 @@ int main( int argc, char **argv )
     cudaThreadSynchronize();
     double simulation_time = read_timer( );
 
+    double size = sqrt(density * n );
+
+    int n_block_x = size / cutoff;
+    int n_block_y = size / cutoff;
+    int block_stride = n_block_y;
+
+    region all_regions[n_block_x * n_block_y];
+
+    for(int i = 0; i < n_block_x; ++i){
+        for(int j = 0; j < n_block_y; ++j){
+            region &target = all_regions[i * block_stride + j];
+            target.x_min = cutoff * i;
+            target.x_max = cutoff * (i + 1);
+            target.y_min = cutoff * j;
+            target.y_max = cutoff * (j + 1);
+            target.global_particles = d_particles;
+            target.n_global_particles = n;
+        }
+    }
+
+    region *dev_all_regions;
+    cudaMalloc((void **) &dev_all_regions, n_block_x * n_block_y * sizeof(region));
+    cudaThreadSynchronize();
+
+    cudaMemcpy(dev_all_regions, all_regions, n_block_x * n_block_y * sizeof(region), cudaMemcpyHostToDevice);
+    cudaThreadSynchronize();
+
+    dim3 numBlocks(n_block_x, n_block_y);
+
     for( int step = 0; step < NSTEPS; step++ )
     {
         //
         //  compute forces
         //
 
-	int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
-	compute_forces_gpu <<< blks, NUM_THREADS >>> (d_particles, n);
+	//int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
+	//compute_forces_gpu <<< blks, NUM_THREADS >>> (d_particles, n);
         
         //
         //  move particles
         //
-	move_gpu <<< blks, NUM_THREADS >>> (d_particles, n, size);
-        
+	//move_gpu <<< blks, NUM_THREADS >>> (d_particles, n, size);
+
+        simulate <<<numBlocks, NUM_THREADS>>> (dev_all_regions, block_stride, n_block_x, n_block_y, size);
+
         //
         //  save if necessary
         //
