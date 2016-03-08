@@ -20,9 +20,9 @@
 
 #include "MPIComm.h"
 
-#define COMM_DEBUG
-#define SIM_DEBUG
-#define GEN_DEBUG
+//#define COMM_DEBUG
+//#define SIM_DEBUG
+//#define GEN_DEBUG
 #define CHECK_ASSERT
 
 #define density 0.0005

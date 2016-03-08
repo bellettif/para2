@@ -177,7 +177,7 @@ int main( int argc, char **argv )
                    block_y,
                    n_block_x,
                    n_block_y,
-                   4, 4,
+                   1, 1,
                    local_partition,
                    local_n_particles,
                    n);
