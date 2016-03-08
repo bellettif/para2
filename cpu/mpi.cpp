@@ -95,12 +95,12 @@ int main( int argc, char **argv )
     set_size( n );
 
     int block_stride = (int) sqrt(n_proc);
-    int n_block_y = block_stride;
-    int n_block_x = n_proc / block_stride;
+    int n_block_y = max(block_stride, 1);
+    int n_block_x = max(n_proc / block_stride, 1);
 
-    std::cout << "Block stride = " << block_stride << std::endl;
-    std::cout << "N block x = " << n_block_x << std::endl;
-    std::cout << "N block y = " << n_block_y << std::endl;
+    //std::cout << "Block stride = " << block_stride << std::endl;
+    //std::cout << "N block x = " << n_block_x << std::endl;
+    //std::cout << "N block y = " << n_block_y << std::endl;
 
     if( rank == 0 ) {
 
@@ -139,39 +139,39 @@ int main( int argc, char **argv )
         for(int p = 1; p < n_proc; ++p){
             MPI_Isend(&n_particles[p], 1, MPI_INT, p, 2 * p, MPI_COMM_WORLD, reqs  + p - 1);
         }
-        std::cout << "O Sending initial size data from " << rank << std::endl;
+        //std::cout << "O Sending initial size data from " << rank << std::endl;
         MPI_Waitall(n_proc - 1, reqs, status);
-        std::cout << "X Sent initial size data from " << rank << std::endl;
+        //std::cout << "X Sent initial size data from " << rank << std::endl;
 
         for(int p = 1; p < n_proc; ++p){
             MPI_Isend(partitions[p], n_particles[p], PARTICLE, p, 2 * p + 1, MPI_COMM_WORLD, reqs + p - 1);
         }
 
-        std::cout << "O Sending initial particle data from " << rank << std::endl;
+        //std::cout << "O Sending initial particle data from " << rank << std::endl;
         MPI_Waitall(n_proc - 1, reqs, status);
-        std::cout << "X Sent initial particle data from " << rank << std::endl;
+        //std::cout << "X Sent initial particle data from " << rank << std::endl;
 
     }else{
 
         MPI_Request req;
 
         MPI_Irecv(&local_n_particles, 1, MPI_INT, 0, 2 * rank, MPI_COMM_WORLD, &req);
-        std::cout << "O Receiving initial size data on " << rank << std::endl;
+        //std::cout << "O Receiving initial size data on " << rank << std::endl;
         MPI_Wait(&req, MPI_STATUS_IGNORE);
-        std::cout << "X Received initial size data on " << rank << std::endl;
+        //std::cout << "X Received initial size data on " << rank << std::endl;
 
         local_partition = new particle_t[local_n_particles];
 
         MPI_Irecv(local_partition, local_n_particles, PARTICLE, 0, 2 * rank + 1, MPI_COMM_WORLD, &req);
-        std::cout << "O Receiving initial particle data on " << rank << std::endl;
+        //std::cout << "O Receiving initial particle data on " << rank << std::endl;
         MPI_Wait(&req, MPI_STATUS_IGNORE);
-        std::cout << "X Received initial particle data on " << rank << std::endl;
+        //std::cout << "X Received initial particle data on " << rank << std::endl;
 
     }
 
     int block_x = rank / block_stride;
     int block_y = rank % block_stride;
-    std::cout << "Starting init on " << rank << std::endl;
+    //std::cout << "Starting init on " << rank << std::endl;
     MPIVectFrame frame(block_stride,
                    block_x,
                    block_y,
@@ -180,10 +180,10 @@ int main( int argc, char **argv )
                    local_partition,
                    local_n_particles,
                    n);
-    std::cout << "Init done on " << rank << std::endl;
-    std::cout << "Block x = " << block_x << std::endl;
-    std::cout << "Block y = " << block_y << std::endl;
-    std::cout << std::endl;
+    //std::cout << "Init done on " << rank << std::endl;
+    //std::cout << "Block x = " << block_x << std::endl;
+    //std::cout << "Block y = " << block_y << std::endl;
+    //std::cout << std::endl;
 
     //
     //  simulate a number of time steps
@@ -192,7 +192,7 @@ int main( int argc, char **argv )
     for( int step = 0; step < NSTEPS; step++ )
     {
 
-        std::cout << "------------ STARTING STEP " << step << " ON " << rank << std::endl;
+        //std::cout << "------------ STARTING STEP " << step << " ON " << rank << std::endl;
 
         // 
         //  collect all global data locally (not good idea to do)
@@ -227,9 +227,9 @@ int main( int argc, char **argv )
             rdmin = 1.0;
             rdavg = 0.0;
 
-            std::cout << step << ": davg on " << rank << ":" << frame.davg << std::endl;
-            std::cout << step << ": navg on " << rank << ":" << frame.navg << std::endl;
-            std::cout << step << ": dmin on " << rank << ":" << frame.dmin << std::endl;
+            //std::cout << step << ": davg on " << rank << ":" << frame.davg << std::endl;
+            //std::cout << step << ": navg on " << rank << ":" << frame.navg << std::endl;
+            //std::cout << step << ": dmin on " << rank << ":" << frame.dmin << std::endl;
 
             MPI_Reduce(&frame.davg,&rdavg,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
             MPI_Reduce(&frame.navg,&rnavg,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
@@ -239,9 +239,9 @@ int main( int argc, char **argv )
 
             if (rank == 0){
 
-                std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
-                std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
-                std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
+                //std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
+                //std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
+                //std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
 
                 //
                 // Computing statistical data
@@ -251,12 +251,12 @@ int main( int argc, char **argv )
                     nabsavg++;
                 }
                 if (rdmin < absmin) absmin = rdmin;
-                std::cout << "Done computing statistical data " << rank << std::endl;
+                //std::cout << "Done computing statistical data " << rank << std::endl;
             }
 
         }
 
-        std::cout << "------------ DONE WITH STEP " << step << " ON " << rank << std::endl;
+        //std::cout << "------------ DONE WITH STEP " << step << " ON " << rank << std::endl;
 
     }
     simulation_time = read_timer( ) - simulation_time;
