@@ -43,10 +43,10 @@ public:
              particle_t *particles, const int _n_particles,
              const int tot_n_particles) :
             size(_size),
-            delta_x(_block_delta_x),
-            delta_y(_block_delta_y),
-            n_x(1),
-            n_y(1),
+            delta_x(min(cutoff, _block_delta_x)),
+            delta_y(min(cutoff, _block_delta_y)),
+            n_x(max(_block_delta_x / cutoff, 1.0)),
+            n_y(max(_block_delta_y / cutoff, 1.0)),
             max_n_particles(tot_n_particles),
             x_min(_block_x * _block_delta_x),
             x_max((_block_x + 1) * _block_delta_x),
@@ -66,6 +66,16 @@ public:
             mpicom(rank)
     {
 
+#ifdef CHECK_ASSERT
+        assert(cutoff != 0.0);
+
+        assert(block_delta_x != 0.0);
+        assert(block_delta_y != 0.0);
+
+        assert(delta_x != 0.0);
+        assert(delta_y != 0.0);
+#endif
+
         navg = 0;
         dmin = 1.0;
         davg = 0.0;
@@ -76,6 +86,10 @@ public:
 #endif
 
         for(int i = 0; i < _n_particles; ++i){
+            assert(particles[i].x >= x_min);
+            assert(particles[i].x <= x_max);
+            assert(particles[i].y >= y_min);
+            assert(particles[i].y <= y_max);
             mem.push_back(particles[i]);
         }
 
@@ -538,12 +552,21 @@ public:
 
             particle_t &part = mem.at(i);
 
-            get_idx(part.x, part.y, x_idx, y_idx);
-
             assert(part.x >= x_min);
             assert(part.x <= x_max);
             assert(part.y <= y_max);
             assert(part.y >= y_min);
+
+            get_idx(part.x, part.y, x_idx, y_idx);
+
+            std::cout << "--------------------" << std::endl;
+            std::cout << x_offset << " " << y_offset << " " << delta_x << " " << delta_y << " " << x_idx << " " << y_idx << std::endl;
+            std::cout << "--------------------" << std::endl;
+
+            assert(x_idx >= 0);
+            assert(x_idx < n_x);
+            assert(y_idx >= 0);
+            assert(y_idx < n_y);
 
             if(y_idx == 0 && x_idx == 0){
                 // This particle is now in SW corner
@@ -610,6 +633,13 @@ public:
 
         clear_loc_buffers();
         clear_p_buffers();
+
+        next_mem.clear();
+        for(int i = 0; i < n_x; ++i){
+            for(int j = 0; j < n_y; ++j){
+                next_part_grid[i][j].clear();
+            }
+        }
 
         int x_idx, y_idx;
         for (int i = 0; i < mem.size(); ++i) {

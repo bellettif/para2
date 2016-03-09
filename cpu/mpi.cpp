@@ -66,12 +66,7 @@ int main( int argc, char **argv )
 
     double size = sqrt(density * n);
 
-    n_proc = min(n_proc, max(size / cutoff, 1));
-
-    if(rank > n_proc){
-        MPI_Finalize( );
-        return 0;
-    }
+    n_proc = min(n_proc, (int) max(size / cutoff, 1.0));
 
     int block_stride = (int) sqrt(n_proc);
     int n_block_y = max(block_stride, 1);
@@ -156,6 +151,10 @@ int main( int argc, char **argv )
     int block_x = rank / block_stride;
     int block_y = rank % block_stride;
     //std::cout << "Starting init on " << rank << std::endl;
+
+    assert(block_delta_x != 0.0);
+    assert(block_delta_y != 0.0);
+
     MPIVectFrame frame(block_stride,
                    block_x,
                    block_y,
@@ -226,9 +225,9 @@ int main( int argc, char **argv )
 
             if (rank == 0){
 
-                //std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
-                //std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
-                //std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
+                std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
+                std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
+                std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
 
                 //
                 // Computing statistical data
@@ -237,7 +236,9 @@ int main( int argc, char **argv )
                     absavg +=  rdavg/rnavg;
                     nabsavg++;
                 }
+                //assert(rdmin != 0.0);
                 if (rdmin < absmin) absmin = rdmin;
+                //assert(absmin >= 0.1);
                 //std::cout << "Done computing statistical data " << rank << std::endl;
             }
 
