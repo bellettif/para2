@@ -78,6 +78,9 @@ int main( int argc, char **argv )
     int n_x = max(block_delta_x / cutoff, 1.0);
     int n_y = max(block_delta_y / cutoff, 1.0);
 
+    //n_x = 1;
+    //n_y = 1;
+
     std::cout << "Size " << size << std::endl;
     std::cout << "Block stride = " << block_stride << std::endl;
     std::cout << "N block x = " << n_block_x << std::endl;

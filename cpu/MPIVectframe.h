@@ -590,7 +590,7 @@ public:
                 Es_buffer.push_back(part);
             }
 
-            if(x_idx == 0 && y_idx == n_y){
+            if(x_idx == 0 && y_idx == n_y - 1){
                 // This particle is now on NW corner
                 NWs_buffer.push_back(part);
             }
@@ -678,7 +678,7 @@ public:
                     Es_buffer.push_back(part);
                 }
 
-                if(x_idx == 0 && y_idx == n_y){
+                if(x_idx == 0 && y_idx == n_y - 1){
                     // This particle is now on NW corner
                     NWs_buffer.push_back(part);
                 }
@@ -934,7 +934,7 @@ public:
                 Es_buffer.push_back(part);
             }
 
-            if(x_idx == 0 && y_idx == n_y){
+            if(x_idx == 0 && y_idx == n_y - 1){
                 // This particle is now on NW corner
                 NWs_buffer.push_back(part);
             }
