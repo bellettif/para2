@@ -40,13 +40,14 @@ public:
              const int _n_block_x, const int _n_block_y,
              const double _size,
              const double _block_delta_x, const double _block_delta_y,
+             const double _n_x, const double _n_y,
              particle_t *particles, const int _n_particles,
              const int tot_n_particles) :
             size(_size),
-            delta_x(min(cutoff, _block_delta_x)),
-            delta_y(min(cutoff, _block_delta_y)),
-            n_x(max(_block_delta_x / cutoff, 1.0)),
-            n_y(max(_block_delta_y / cutoff, 1.0)),
+            delta_x(_block_delta_x / ((double) _n_x)),
+            delta_y(_block_delta_y / ((double) _n_y)),
+            n_x(_n_x),
+            n_y(_n_y),
             max_n_particles(tot_n_particles),
             x_min(_block_x * _block_delta_x),
             x_max((_block_x + 1) * _block_delta_x),
@@ -427,9 +428,6 @@ public:
 
             get_idx(part.x, part.y, x_idx, y_idx);
 
-            x_idx = min(n_x - 1, x_idx);
-            y_idx = min(n_y - 1, y_idx);
-
 #ifdef CHECK_ASSERT
             assert(x_idx >= 0);
             assert(x_idx < n_x);
@@ -562,9 +560,6 @@ public:
 
             get_idx(part.x, part.y, x_idx, y_idx);
 
-            x_idx = min(x_idx, n_x - 1);
-            y_idx = min(y_idx, n_y - 1);
-
             assert(x_idx >= 0);
             assert(x_idx < n_x);
             assert(y_idx >= 0);
@@ -653,9 +648,6 @@ public:
             get_idx(part.x, part.y, x_idx, y_idx);
 
             if(part.x >= x_min && part.x <= x_max && part.y <= y_max && part.y >= y_min){
-
-                x_idx = min(x_idx, n_x - 1);
-                y_idx = min(y_idx, n_y - 1);
 
                 // Particle is still within the region
                 next_mem.push_back(part);
@@ -907,9 +899,6 @@ public:
             assert(part.x <= x_max);
             assert(part.y <= y_max);
             assert(part.y >= y_min);
-
-            x_idx = min(n_x - 1, x_idx);
-            y_idx = min(n_y - 1, y_idx);
 
             assert(x_idx >= 0);
             assert(y_idx >= 0);

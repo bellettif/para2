@@ -66,8 +66,6 @@ int main( int argc, char **argv )
 
     double size = sqrt(density * n);
 
-    n_proc = min(n_proc, (int) max(size / cutoff, 1.0));
-
     int block_stride = (int) sqrt(n_proc);
     int n_block_y = max(block_stride, 1);
     int n_block_x = max(n_proc / block_stride, 1);
@@ -76,6 +74,9 @@ int main( int argc, char **argv )
 
     double block_delta_x = size / ((double) n_block_x);
     double block_delta_y = size / ((double) n_block_y);
+
+    int n_x = max(block_delta_x / cutoff, 1.0);
+    int n_y = max(block_delta_y / cutoff, 1.0);
 
     std::cout << "Size " << size << std::endl;
     std::cout << "Block stride = " << block_stride << std::endl;
@@ -163,6 +164,8 @@ int main( int argc, char **argv )
                    size,
                    block_delta_x,
                    block_delta_y,
+                   n_x,
+                   n_y,
                    local_partition,
                    local_n_particles,
                    n);
