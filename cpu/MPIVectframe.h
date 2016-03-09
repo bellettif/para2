@@ -427,6 +427,9 @@ public:
 
             get_idx(part.x, part.y, x_idx, y_idx);
 
+            x_idx = min(n_x - 1, x_idx);
+            y_idx = min(n_y - 1, y_idx);
+
 #ifdef CHECK_ASSERT
             assert(x_idx >= 0);
             assert(x_idx < n_x);
@@ -559,9 +562,8 @@ public:
 
             get_idx(part.x, part.y, x_idx, y_idx);
 
-            std::cout << "--------------------" << std::endl;
-            std::cout << x_offset << " " << y_offset << " " << delta_x << " " << delta_y << " " << x_idx << " " << y_idx << std::endl;
-            std::cout << "--------------------" << std::endl;
+            x_idx = min(x_idx, n_x - 1);
+            y_idx = min(y_idx, n_y - 1);
 
             assert(x_idx >= 0);
             assert(x_idx < n_x);
@@ -651,6 +653,10 @@ public:
             get_idx(part.x, part.y, x_idx, y_idx);
 
             if(part.x >= x_min && part.x <= x_max && part.y <= y_max && part.y >= y_min){
+
+                x_idx = min(x_idx, n_x - 1);
+                y_idx = min(y_idx, n_y - 1);
+
                 // Particle is still within the region
                 next_mem.push_back(part);
                 next_part_grid[x_idx][y_idx].push_back(&next_mem.back());
@@ -901,6 +907,10 @@ public:
             assert(part.x <= x_max);
             assert(part.y <= y_max);
             assert(part.y >= y_min);
+
+            x_idx = min(n_x - 1, x_idx);
+            y_idx = min(n_y - 1, y_idx);
+
             assert(x_idx >= 0);
             assert(y_idx >= 0);
             assert(x_idx < n_x);
