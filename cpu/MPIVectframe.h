@@ -38,27 +38,31 @@ public:
     MPIVectFrame(const int _block_stride,
              const int _block_x, const int _block_y,
              const int _n_block_x, const int _n_block_y,
+             const double _size,
+             const double _block_delta_x, const double _block_delta_y,
              particle_t *particles, const int _n_particles,
              const int tot_n_particles) :
-            size(sqrt(density * tot_n_particles)),
-            delta_x(cutoff),
-            delta_y(cutoff),
-            n_x(max((sqrt(density * tot_n_particles) / ((double) cutoff)) / ((double) _n_block_x), 1)),
-            n_y(max((sqrt(density * tot_n_particles) / ((double) cutoff)) / ((double) _n_block_y), 1)),
+            size(_size),
+            delta_x(_block_delta_x),
+            delta_y(_block_delta_y),
+            n_x(1),
+            n_y(1),
             max_n_particles(tot_n_particles),
-            x_min(_block_x * sqrt(density * tot_n_particles) / ((double) _n_block_x)),
-            x_max((_block_x + 1) * sqrt(density * tot_n_particles) / ((double) _n_block_x)),
-            y_min(_block_y * sqrt(density * tot_n_particles) / ((double) _n_block_y)),
-            y_max((_block_y + 1) * sqrt(density * tot_n_particles) / ((double) _n_block_y)),
+            x_min(_block_x * _block_delta_x),
+            x_max((_block_x + 1) * _block_delta_x),
+            y_min(_block_y * _block_delta_y),
+            y_max((_block_y + 1) * _block_delta_y),
             rank(_block_x * _block_stride + _block_y),
             n_procs(_n_block_x * _n_block_y),
             block_stride(_block_stride),
             block_x(_block_x),
             block_y(_block_y),
+            block_delta_x(_block_delta_x),
+            block_delta_y(_block_delta_y),
             n_block_x(_n_block_x),
             n_block_y(_n_block_y),
-            x_offset(_block_x * sqrt(density * tot_n_particles) / ((double) _n_block_x)),
-            y_offset(_block_y * sqrt(density * tot_n_particles) / ((double) _n_block_y)),
+            x_offset(_block_x * _block_delta_x),
+            y_offset(_block_y * _block_delta_y),
             mpicom(rank)
     {
 
@@ -664,8 +668,8 @@ public:
             }else{
 
                 // Particle is no longer within the region
-                int global_idx = (int) (part.x / (size / (double) n_block_x));
-                int global_idy = (int) (part.y / (size / (double) n_block_y));
+                int global_idx = (int) (part.x / block_delta_x);
+                int global_idy = (int) (part.y / block_delta_y);
 
                 int dest = global_idx * block_stride + global_idy;
 
@@ -738,6 +742,8 @@ public:
     const int block_y;
     const int n_block_x;
     const int n_block_y;
+    const double block_delta_x;
+    const double block_delta_y;
     const double x_offset;
     const double y_offset;
 

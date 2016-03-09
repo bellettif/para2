@@ -58,49 +58,36 @@ int main( int argc, char **argv )
     MPI_Datatype PARTICLE;
     MPI_Type_contiguous( 6, MPI_DOUBLE, &PARTICLE );
     MPI_Type_commit( &PARTICLE );
-    
-    //
-    //  set up the data partitioning across processors
-    //
-
-    /*
-
-    int particle_per_proc = (n + n_proc - 1) / n_proc;
-    int *partition_offsets = (int*) malloc( (n_proc+1) * sizeof(int) );
-    for( int i = 0; i < n_proc+1; i++ )
-        partition_offsets[i] = min( i * particle_per_proc, n );
-    
-    int *partition_sizes = (int*) malloc( n_proc * sizeof(int) );
-    for( int i = 0; i < n_proc; i++ )
-        partition_sizes[i] = partition_offsets[i+1] - partition_offsets[i];
-    
-    //
-    //  allocate storage for local partition
-    //
-    int nlocal = partition_sizes[rank];
-    particle_t *local = (particle_t*) malloc( nlocal * sizeof(particle_t) );
-    
-    //
-    //  initialize and distribute the particles (that's fine to leave it unoptimized)
-    //
-    set_size( n );
-    if( rank == 0 )
-        init_particles( n, particles );
-    MPI_Scatterv( particles, partition_sizes, partition_offsets, PARTICLE, local, nlocal, PARTICLE, 0, MPI_COMM_WORLD );
-    */
 
     particle_t* local_partition;
     int local_n_particles = 0;
 
     set_size( n );
 
+    double size = sqrt(density * n);
+
+    n_proc = min(n_proc, max(size / cutoff, 1));
+
+    if(rank > n_proc){
+        MPI_Finalize( );
+        return 0;
+    }
+
     int block_stride = (int) sqrt(n_proc);
     int n_block_y = max(block_stride, 1);
     int n_block_x = max(n_proc / block_stride, 1);
 
-    //std::cout << "Block stride = " << block_stride << std::endl;
-    //std::cout << "N block x = " << n_block_x << std::endl;
-    //std::cout << "N block y = " << n_block_y << std::endl;
+    assert(n_proc == n_block_x * n_block_y);
+
+    double block_delta_x = size / ((double) n_block_x);
+    double block_delta_y = size / ((double) n_block_y);
+
+    std::cout << "Size " << size << std::endl;
+    std::cout << "Block stride = " << block_stride << std::endl;
+    std::cout << "N block x = " << n_block_x << std::endl;
+    std::cout << "N block y = " << n_block_y << std::endl;
+    std::cout << "Block delta x = " << block_delta_x << std::endl;
+    std::cout << "Block delta y = " << block_delta_y << std::endl;
 
     if( rank == 0 ) {
 
@@ -115,14 +102,11 @@ int main( int argc, char **argv )
 
         int x_idx, y_idx, proc_idx;
 
-        double delta_x = sqrt(density * n) / ((double) n_block_x);
-        double delta_y = sqrt(density * n) / ((double) n_block_y);
-
         for (int i = 0; i < n; ++i) {
             const particle_t &part = particles[i];
 
-            x_idx = (int) (part.x / delta_x);
-            y_idx = (int) (part.y / delta_y);
+            x_idx = (int) (part.x / block_delta_x);
+            y_idx = (int) (part.y / block_delta_y);
             proc_idx = x_idx * block_stride + y_idx;
 
             partitions[proc_idx][n_particles[proc_idx]++] = part;
@@ -177,6 +161,9 @@ int main( int argc, char **argv )
                    block_y,
                    n_block_x,
                    n_block_y,
+                   size,
+                   block_delta_x,
+                   block_delta_y,
                    local_partition,
                    local_n_particles,
                    n);
