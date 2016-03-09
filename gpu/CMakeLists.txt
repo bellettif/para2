@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 FIND_PACKAGE(CUDA REQUIRED)
 
 SET(CUDA_PROPAGATE_HOST_FLAGS False)
-SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch sm_35 -rdc=true -std=c++11)
+SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++11)
 
 SET($INCLUDE_DIRS
         include
@@ -24,8 +24,9 @@ set(
     SOURCE_FILES
     common.cu
     common.h
-    GPUframe.cu
     physics.cu
+    frame_utils.cu
+    GPUframe.cu
     gpu.cu
     #serial.cu
 )

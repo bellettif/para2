@@ -1,4 +1,5 @@
 #include "physics.cuh"
+#include "common.h"
 
 __device__ void apply_force_gpu(particle_t &particle, particle_t &neighbor)
 {

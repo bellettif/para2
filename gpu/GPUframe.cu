@@ -11,49 +11,9 @@
 
 
 #include "GPUframe.cuh"
+#include "frame_utils.cuh"
 
-__global__ void apply_forces(region *r, const int offset){
-
-    int i = threadIdx.x;
-
-    if(i >= r->n_shared_particles - offset) return;
-
-    particle_t& part = *(r->shared_particles + offset + i);
-    part.ax = 0;
-    part.ay = 0;
-
-    for(int j = 0; j < r->n_shared_particles; ++j){
-        apply_force_gpu(part, r->shared_particles[j]);
-    }
-
-}
-
-__global__ void find_particles(region *r){
-
-    int n_shared_particles = 0;
-
-    for(int i = 0; i < r->n_global_particles; ++i) {
-        particle_t part = r->global_particles[i];
-        if (part.x >= r->x_min && part.x < r->x_max && part.y >= r->y_min && part.y < r->y_max) {
-            r->shared_particles[n_shared_particles] = part;
-            r->shared_particle_idx[n_shared_particles] = i;
-            ++ n_shared_particles;
-        }
-    }
-
-    r->n_shared_particles = n_shared_particles;
-
-}
-
-__global__ void broadcast_locations(region *r, const int offset){
-
-    int i = threadIdx.x;
-
-    if(i >= r->n_global_particles - offset) return;
-
-    r->global_particles[r->shared_particle_idx[i + offset]] = r->shared_particles[i + offset];
-
-}
+#define BUFF_SIZE 256
 
 __global__ void simulate(region* r, const int stride,
                          const int n_r_x, int const n_r_y,
@@ -68,30 +28,77 @@ __global__ void simulate(region* r, const int stride,
 
     region* target_region = r + region_idx;
 
-    if(threadIdx.x == 0) find_particles <<<1, 1>>>(target_region);
+    __shared__ particle_t core_mem[BUFF_SIZE];
+    __shared__ particle_t helper_mem[BUFF_SIZE];
 
-    if(threadIdx.x == 0) {
-        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-            apply_forces <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);
-            __syncthreads();
-        }
+    int offset;
+    int i;
+    for (int micro_step = 0; micro_step < target_region->n_local_particles / NUM_THREADS + 1; ++micro_step) {
+        offset = micro_step * NUM_THREADS;
+        i = offset + threadIdx.x;
+        if(i >= target_region->n_local_particles) break;
+        core_mem[i] = target_region->d_local_particles[i];
     }
 
-    if(threadIdx.x == 0) {
-        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-            move_gpu <<< 1, NUM_THREADS >>> (
-                target_region->shared_particles + micro_step * NUM_THREADS,
-                target_region->n_shared_particles + micro_step * NUM_THREADS,
-                size);
-            __syncthreads();
-        }
+    for (int micro_step = 0; micro_step < target_region->n_helper_particles / NUM_THREADS + 1; ++micro_step) {
+        offset = micro_step * NUM_THREADS;
+        i = offset + threadIdx.x;
+        if(i >= target_region->n_helper_particles) break;
+        helper_mem[i] = target_region->d_helper_particles[i];
     }
 
-    if(threadIdx.x == 0) {
-        for (int micro_step = 0; micro_step < target_region->n_shared_particles / NUM_THREADS + 1; ++micro_step) {
-            broadcast_locations <<< 1, NUM_THREADS >>> (target_region, micro_step * NUM_THREADS);;
-            __syncthreads();
+    for (int micro_step = 0; micro_step < target_region->n_local_particles / NUM_THREADS + 1; ++micro_step) {
+        offset = micro_step * NUM_THREADS;
+        i = offset + threadIdx.x;
+        if(i >= target_region->n_local_particles) break;
+        particle_t *part = core_mem + i;
+
+        part->ax = 0.0;
+        part->ay = 0.0;
+
+        for(int j = 0; j < r->n_local_particles; ++j){
+            double dx = core_mem[j].x - part->x;
+            double dy = core_mem[j].y - part->y;
+            double r2 = dx * dx + dy * dy;
+            if( r2 > cutoff*cutoff )
+                return;
+            //r2 = fmax( r2, min_r*min_r );
+            r2 = (r2 > min_r*min_r) ? r2 : min_r*min_r;
+            double r = sqrt( r2 );
+
+            //
+            //  very simple short-range repulsive force
+            //
+            double coef = ( 1 - cutoff / r ) / r2 / mass;
+            part->ax += coef * dx;
+            part->ay += coef * dy;
         }
+
+        for(int j = 0; j < r->n_helper_particles; ++j){
+            double dx = helper_mem[j].x - part->x;
+            double dy = helper_mem[j].y - part->y;
+            double r2 = dx * dx + dy * dy;
+            if( r2 > cutoff*cutoff )
+                return;
+            //r2 = fmax( r2, min_r*min_r );
+            r2 = (r2 > min_r*min_r) ? r2 : min_r*min_r;
+            double r = sqrt( r2 );
+
+            //
+            //  very simple short-range repulsive force
+            //
+            double coef = ( 1 - cutoff / r ) / r2 / mass;
+            part->ax += coef * dx;
+            part->ay += coef * dy;
+        }
+
+    }
+
+    for (int micro_step = 0; micro_step < target_region->n_local_particles / NUM_THREADS + 1; ++micro_step) {
+        offset = micro_step * NUM_THREADS;
+        i = offset + threadIdx.x;
+        if(i >= target_region->n_local_particles) break;
+        target_region->d_local_particles[i] = core_mem[i];
     }
 
 }
