@@ -1,9 +1,10 @@
 #!/bin/bash -l
 #SBATCH -p debug # change this option for non-debug runs
 #SBATCH -t 00:10:00
-#SBATCH -N 16
+#SBATCH -N 8
 #SBATCH -A mp309
 #SBATCH -o mpi6.%j.stdout
 #SBATCH -e mpi6.%j.error
 
-srun -n 16 ./mpi -n 5000 -o mpi.txt
+srun -n 8 ./mpi -n 8000 -o mpi.txt
+

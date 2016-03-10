@@ -75,11 +75,8 @@ int main( int argc, char **argv )
     double block_delta_x = size / ((double) n_block_x);
     double block_delta_y = size / ((double) n_block_y);
 
-    int n_x = max(block_delta_x / cutoff, 1.0);
-    int n_y = max(block_delta_y / cutoff, 1.0);
-
-    //n_x = 1;
-    //n_y = 1;
+    int n_x = max(block_delta_x / (cutoff * 10), 1.0);
+    int n_y = max(block_delta_y / (cutoff * 10), 1.0);
 
     std::cout << "Size " << size << std::endl;
     std::cout << "Block stride = " << block_stride << std::endl;
@@ -233,9 +230,9 @@ int main( int argc, char **argv )
 
             if (rank == 0){
 
-                std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
-                std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
-                std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
+                //std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
+                //std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
+                //std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
 
                 //
                 // Computing statistical data
