@@ -7,7 +7,7 @@
 #include <cuda.h>
 #include "common.h"
 
-#define NUM_THREADS 256
+#define NUM_THREADS 512
 
 extern double size;
 //

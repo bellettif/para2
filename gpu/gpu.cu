@@ -25,29 +25,28 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    int n = read_int( argc, argv, "-n", 1000 );
+    int n = read_int( argc, argv, "-n", 10000);
 
     char *savename = read_string( argc, argv, "-o", NULL );
     
     FILE *fsave = savename ? fopen( savename, "w" ) : NULL;
     particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
-    particle_t *h_check = (particle_t*) malloc( n * sizeof(particle_t) );
 
     // GPU particle data structure
     particle_t * d_particles;
     particle_t * d_check;
     cudaMalloc((void **) &d_particles, n * sizeof(particle_t));
-    cudaMalloc((void **) &d_check, n * sizeof(particle_t));
 
     set_size( n );
 
     init_particles( n, particles );
 
+    printf("\n");
+
     cudaThreadSynchronize();
     double copy_time = read_timer( );
 
     // Copy the particles to the GPU
-    cudaMemcpy(d_particles, particles, n * sizeof(particle_t), cudaMemcpyHostToDevice);
     cudaMemcpy(d_check, particles, n * sizeof(particle_t), cudaMemcpyHostToDevice);
 
     cudaThreadSynchronize();
@@ -61,10 +60,11 @@ int main( int argc, char **argv )
 
     double size = sqrt(density * n );
 
-    const double delta = cutoff * 20;
+    int n_block_x = max((int) (size / (20 * cutoff)), 1);
+    int n_block_y = max((int) (size / (20 * cutoff)), 1);
 
-    int n_block_x = (int) ((size + delta) / delta);
-    int n_block_y = (int) ((size + delta) / delta);
+    const double delta = size / ((double) n_block_x);
+
     int block_stride = n_block_y;
 
     printf("\nDelta = %f, size = %f", delta, size);
@@ -80,10 +80,10 @@ int main( int argc, char **argv )
             target.y_min = delta * j;
             target.y_max = delta * (j + 1);
 
-            target.helper_x_min = max(delta * (i - 1), 0.0);
-            target.helper_x_max = min(delta * (i + 2), size);
-            target.helper_y_min = max(delta * (j - 1), 0.0);
-            target.helper_y_max = min(delta * (j + 2), size);
+            target.helper_x_min = target.x_min - cutoff;
+            target.helper_x_max = target.x_max + cutoff;
+            target.helper_y_min = target.y_min - cutoff;
+            target.helper_y_max = target.y_max + cutoff;
 
             target.n_local_particles = 0;
             target.h_local_particles = (particle_t*) malloc( n * sizeof(particle_t) );
@@ -102,70 +102,71 @@ int main( int argc, char **argv )
 
     dim3 numBlocks(n_block_x, n_block_y);
 
+    double dmin = 1.0;
+    double davg;
+    int navg;
+
+    double absavg = 0.0;
+    double absdmin = 1.0;
+
     int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
-
-    /*
     for( int step = 0; step < NSTEPS; step++ )
     {
-
-        compute_forces_gpu <<< blks, NUM_THREADS >>> (d_check, n);
-        move_gpu <<< blks, NUM_THREADS >>> (d_check, n, size);
-
-
-    }
-    cudaThreadSynchronize();
-    cudaMemcpy(h_check, d_check, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
-    */
-
-    for( int step = 0; step < NSTEPS; step++ )
-    {
+        davg = 0.0;
+        navg = 0;
+        dmin = 1.0;
 
         for(int i = 0; i < n_block_x * n_block_y; ++i){
             assign_particles(all_regions[i], particles, n);
+            //printf("\n%d %d\n", i, all_regions[i].n_helper_particles);
             copy_region_to_device(all_regions[i]);
         }
 
         cudaMemcpy(dev_all_regions, all_regions, n_block_x * n_block_y * sizeof(region), cudaMemcpyHostToDevice);
-        cudaDeviceSynchronize();
 
+        cudaDeviceSynchronize();
         simulate <<<numBlocks, NUM_THREADS>>> (dev_all_regions, block_stride, n_block_x, n_block_y, size);
-        cudaDeviceSynchronize();
-
-        //
-        //  move particles
-        //
-        move_gpu <<< blks, NUM_THREADS >>> (d_particles, n, size);
         cudaDeviceSynchronize();
 
         for(int i = 0; i < n_block_x * n_block_y; ++i){
             copy_region_to_host(all_regions[i]);
         }
-
+        cudaDeviceSynchronize();
         copy_regions_to_array(all_regions, n_block_x * n_block_y, particles, n);
+
+        for(int i = 0; i < n; ++i){
+            const particle_t &p1 = particles[i];
+            for(int j = 0; j < n; ++j){
+                const particle_t & p2 = particles[j];
+                double dx = p1.x - p2.x;
+                double dy = p1.y - p2.y;
+                double r2 = dx * dx + dy * dy;
+                if(r2 == 0.0) continue;
+                if( r2 > cutoff*cutoff )
+                    continue;
+                if(r2 / (cutoff * cutoff) < dmin * dmin){
+                    dmin = sqrt(r2) / cutoff;
+                    davg += sqrt(r2) / cutoff;
+                    ++ navg;
+                }
+            }
+        }
+        absavg += davg / max(navg, 1);
+        if(dmin < absdmin) absdmin = dmin;
 
         //
         //  save if necessary
         //
         if( fsave && (step%SAVEFREQ) == 0 ) {
 	    // Copy the particles back to the CPU
-            cudaMemcpy(particles, d_particles, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
+            //cudaMemcpy(particles, d_particles, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
             save( fsave, n, particles);
 	}
     }
     cudaDeviceSynchronize();
     simulation_time = read_timer( ) - simulation_time;
 
-    cudaMemcpy(particles, d_particles, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
-
-    /*
-    for(int i = 0; i < n; ++i){
-        printf("'%f %f %f %f\n", h_check[i].x, h_check[i].y, particles[i].x, particles[i].y);
-        assert(h_check[i].x == particles[i].x);
-        assert(h_check[i].y == particles[i].y);
-    }
-    */
-    
+    printf("\n%f %f\n", absdmin, absavg / NSTEPS);
     printf( "CPU-GPU copy time = %g seconds\n", copy_time);
     printf( "n = %d, simulation time = %g seconds\n", n, simulation_time );
     
