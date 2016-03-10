@@ -6,15 +6,6 @@
 #include "common.h"
 
 typedef struct {
-    double x_min;
-    double x_max;
-    double y_min;
-    double y_max;
-
-    double helper_x_min;
-    double helper_x_max;
-    double helper_y_min;
-    double helper_y_max;
 
     particle_t *d_local_particles;
     particle_t *h_local_particles;
@@ -26,7 +17,12 @@ typedef struct {
 
 } region;
 
-void assign_particles(region &r, particle_t *particles, const int n_particles);
+void assign_particles(region *rs,
+                      const int block_stride,
+                      const int n_block_x,
+                      const int n_block_y,
+                      const double delta_x, const double delta_y,
+                      particle_t *particles, const int n_particles);
 
 void copy_region_to_device(region &r);
 

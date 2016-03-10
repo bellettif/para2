@@ -1,19 +1,42 @@
 #include "frame_utils.cuh"
 #include "common.h"
 
-void assign_particles(region &r, particle_t *particles, const int n_particles){
+void assign_particles(region *rs,
+                      const int block_stride,
+                      const int n_block_x,
+                      const int n_block_y,
+                      const double delta_x, const double delta_y,
+                      particle_t *particles, const int n_particles){
 
-    r.n_local_particles = 0;
-    r.n_helper_particles = 0;
+    for(int i = 0; i < n_block_x; ++i){
+        for(int j = 0; j < n_block_y; ++j){
+            rs[i * block_stride + j].n_local_particles = 0;
+            rs[i * block_stride + j].n_helper_particles = 0;
+        }
+    }
 
+    int idx, idy;
     for(int i = 0; i < n_particles; ++i){
         const particle_t &part = particles[i];
-        if((part.x >= r.x_min) && (part.x < r.x_max) && (part.y >= r.y_min) && (part.y < r.y_max)){
-            r.h_local_particles[r.n_local_particles ++] = part;
+
+        idx = (int) (part.x / delta_x);
+        idy = (int) (part.y / delta_y);
+
+        for(int x_offset = -1; x_offset <= 1; ++ x_offset){
+            if(idx + x_offset >= 0 && idx + x_offset < n_block_x) {
+                for (int y_offset = -1; y_offset <= 1; ++y_offset) {
+                    if (idy + y_offset >= 0 && idy + y_offset < n_block_y){
+                        region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+                        if(idx == idy){
+                            target_region.h_local_particles[target_region.n_local_particles++] = part;
+                        }else{
+                            target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+                        }
+                    }
+                }
+            }
         }
-        if((part.x >= r.helper_x_min) && (part.x <= r.helper_x_max) && (part.y >= r.helper_y_min) && (part.y <= r.helper_y_max)){
-            r.h_helper_particles[r.n_helper_particles ++] = part;
-        }
+
     }
 
 }

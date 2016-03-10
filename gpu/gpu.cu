@@ -25,7 +25,7 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    int n = read_int( argc, argv, "-n", 10000);
+    int n = read_int( argc, argv, "-n", 20000);
 
     char *savename = read_string( argc, argv, "-o", NULL );
     
@@ -34,7 +34,6 @@ int main( int argc, char **argv )
 
     // GPU particle data structure
     particle_t * d_particles;
-    particle_t * d_check;
     cudaMalloc((void **) &d_particles, n * sizeof(particle_t));
 
     set_size( n );
@@ -46,22 +45,17 @@ int main( int argc, char **argv )
     cudaThreadSynchronize();
     double copy_time = read_timer( );
 
-    // Copy the particles to the GPU
-    cudaMemcpy(d_check, particles, n * sizeof(particle_t), cudaMemcpyHostToDevice);
-
     cudaThreadSynchronize();
     copy_time = read_timer( ) - copy_time;
     
     //
     //  simulate a number of time steps
     //
-    cudaThreadSynchronize();
+    double size = sqrt(density * n );
     double simulation_time = read_timer( );
 
-    double size = sqrt(density * n );
-
-    int n_block_x = max((int) (size / (20 * cutoff)), 1);
-    int n_block_y = max((int) (size / (20 * cutoff)), 1);
+    int n_block_x = max((int) sqrt(size / (20 * cutoff)), 1);
+    int n_block_y = max((int) sqrt(size / (20 * cutoff)), 1);
 
     const double delta = size / ((double) n_block_x);
 
@@ -75,15 +69,6 @@ int main( int argc, char **argv )
     for(int i = 0; i < n_block_x; ++i){
         for(int j = 0; j < n_block_y; ++j){
             region &target = all_regions[i * block_stride + j];
-            target.x_min = delta * i;
-            target.x_max = delta * (i + 1);
-            target.y_min = delta * j;
-            target.y_max = delta * (j + 1);
-
-            target.helper_x_min = target.x_min - cutoff;
-            target.helper_x_max = target.x_max + cutoff;
-            target.helper_y_min = target.y_min - cutoff;
-            target.helper_y_max = target.y_max + cutoff;
 
             target.n_local_particles = 0;
             target.h_local_particles = (particle_t*) malloc( n * sizeof(particle_t) );
@@ -116,9 +101,9 @@ int main( int argc, char **argv )
         navg = 0;
         dmin = 1.0;
 
+        assign_particles(all_regions, n_block_y, n_block_x, n_block_y, delta, delta, particles, n);
+
         for(int i = 0; i < n_block_x * n_block_y; ++i){
-            assign_particles(all_regions[i], particles, n);
-            //printf("\n%d %d\n", i, all_regions[i].n_helper_particles);
             copy_region_to_device(all_regions[i]);
         }
 
@@ -160,7 +145,7 @@ int main( int argc, char **argv )
         if( fsave && (step%SAVEFREQ) == 0 ) {
 	    // Copy the particles back to the CPU
             //cudaMemcpy(particles, d_particles, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
-            save( fsave, n, particles);
+            //save( fsave, n, particles);
 	}
     }
     cudaDeviceSynchronize();
