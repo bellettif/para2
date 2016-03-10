@@ -75,9 +75,9 @@ int main( int argc, char **argv )
             grid.apply_forces(particles[i], &dmin, &davg, &navg);
         }
 
-        std::cout << "navg: " << navg << std::endl;
-        std::cout << "davg: " << davg << std::endl;
-        std::cout << "dmin: " << dmin << std::endl;
+        //std::cout << "navg: " << navg << std::endl;
+        //std::cout << "davg: " << davg << std::endl;
+        //std::cout << "dmin: " << dmin << std::endl;
 
         //
         //  move particles
