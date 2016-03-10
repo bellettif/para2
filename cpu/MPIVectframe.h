@@ -64,7 +64,7 @@ public:
             n_block_y(_n_block_y),
             x_offset(_block_x * _block_delta_x),
             y_offset(_block_y * _block_delta_y),
-            mpicom(rank)
+            mpicom(_block_x * _block_stride + _block_y)
     {
 
 #ifdef CHECK_ASSERT
@@ -890,7 +890,21 @@ public:
 
         for(int i = 0; i < buffer.size(); ++i) {
 
-            const particle_t &part = buffer.at(i);
+            particle_t part = buffer.at(i);
+             
+	    if(part.x < x_min){
+                part.x = x_min;
+	    }
+            if(part.x > x_max){
+		part.x = x_max;
+	    }
+	    if(part.y < y_min){
+ 		part.y = y_min;
+	    }
+	    if(part.y > y_max){
+		part.y = y_max;
+	    }
+
 
             get_idx(part.x, part.y, x_idx, y_idx);
 

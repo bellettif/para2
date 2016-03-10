@@ -1,0 +1,57 @@
+Proc 5
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 6
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 7
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 0
+Proc 3
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 1
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 4
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Proc 2
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+Size 0.5
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.125
+Block delta y = 0.25
+n = 500, simulation time = 0.176651 seconds, absmin = 0.764862, absavg = 0.957498

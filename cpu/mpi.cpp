@@ -66,8 +66,8 @@ int main( int argc, char **argv )
 
     double size = sqrt(density * n);
 
-    int block_stride = (int) sqrt(n_proc);
-    int n_block_y = max(block_stride, 1);
+    int block_stride = max((int) sqrt(n_proc), 1);
+    int n_block_y = block_stride;
     int n_block_x = max(n_proc / block_stride, 1);
 
     assert(n_proc == n_block_x * n_block_y);
@@ -75,11 +75,8 @@ int main( int argc, char **argv )
     double block_delta_x = size / ((double) n_block_x);
     double block_delta_y = size / ((double) n_block_y);
 
-    int n_x = max(block_delta_x / cutoff, 1.0);
-    int n_y = max(block_delta_y / cutoff, 1.0);
-
-    //n_x = 1;
-    //n_y = 1;
+    int n_x = max(block_delta_x / (cutoff * 10), 1.0);
+    int n_y = max(block_delta_y / (cutoff * 10), 1.0);
 
     std::cout << "Size " << size << std::endl;
     std::cout << "Block stride = " << block_stride << std::endl;
@@ -159,6 +156,8 @@ int main( int argc, char **argv )
     assert(block_delta_x != 0.0);
     assert(block_delta_y != 0.0);
 
+    assert(rank == block_x * block_stride + block_y);
+
     MPIVectFrame frame(block_stride,
                    block_x,
                    block_y,
@@ -231,9 +230,9 @@ int main( int argc, char **argv )
 
             if (rank == 0){
 
-                std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
-                std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
-                std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
+                //std::cout << step << ": rdavg on " << rank << ":" << rdavg << std::endl;
+                //std::cout << step << ": rnavg on " << rank << ":" << rnavg << std::endl;
+                //std::cout << step << ": rdmin on " << rank << ":" << rdmin << std::endl;
 
                 //
                 // Computing statistical data
