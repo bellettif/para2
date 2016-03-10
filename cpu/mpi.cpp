@@ -159,6 +159,8 @@ int main( int argc, char **argv )
     assert(block_delta_x != 0.0);
     assert(block_delta_y != 0.0);
 
+    assert(rank == block_x * block_stride + block_y);
+
     MPIVectFrame frame(block_stride,
                    block_x,
                    block_y,

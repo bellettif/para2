@@ -64,7 +64,7 @@ public:
             n_block_y(_n_block_y),
             x_offset(_block_x * _block_delta_x),
             y_offset(_block_y * _block_delta_y),
-            mpicom(rank)
+            mpicom(_block_x * _block_stride + _block_y)
     {
 
 #ifdef CHECK_ASSERT
