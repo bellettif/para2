@@ -25,7 +25,7 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    int n = read_int( argc, argv, "-n", 20000);
+    int n = read_int( argc, argv, "-n", 100000);
 
     char *savename = read_string( argc, argv, "-o", NULL );
     
@@ -54,8 +54,8 @@ int main( int argc, char **argv )
     double size = sqrt(density * n );
     double simulation_time = read_timer( );
 
-    int n_block_x = max((int) sqrt(size / (20 * cutoff)), 1);
-    int n_block_y = max((int) sqrt(size / (20 * cutoff)), 1);
+    int n_block_x = max((int) (size / (50 * cutoff)), 1);
+    int n_block_y = max((int) (size / (50 * cutoff)), 1);
 
     const double delta = size / ((double) n_block_x);
 
@@ -69,6 +69,11 @@ int main( int argc, char **argv )
     for(int i = 0; i < n_block_x; ++i){
         for(int j = 0; j < n_block_y; ++j){
             region &target = all_regions[i * block_stride + j];
+
+            target.x_min = delta * i - cutoff;
+            target.y_min = delta * j - cutoff;
+            target.x_max = delta * (i + 1) + cutoff;
+            target.y_max = delta * (j + 1) + cutoff;
 
             target.n_local_particles = 0;
             target.h_local_particles = (particle_t*) malloc( n * sizeof(particle_t) );
@@ -119,6 +124,7 @@ int main( int argc, char **argv )
         cudaDeviceSynchronize();
         copy_regions_to_array(all_regions, n_block_x * n_block_y, particles, n);
 
+        /*
         for(int i = 0; i < n; ++i){
             const particle_t &p1 = particles[i];
             for(int j = 0; j < n; ++j){
@@ -138,6 +144,7 @@ int main( int argc, char **argv )
         }
         absavg += davg / max(navg, 1);
         if(dmin < absdmin) absdmin = dmin;
+        */
 
         //
         //  save if necessary

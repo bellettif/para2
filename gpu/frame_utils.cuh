@@ -7,6 +7,11 @@
 
 typedef struct {
 
+    double x_max;
+    double x_min;
+    double y_max;
+    double y_min;
+
     particle_t *d_local_particles;
     particle_t *h_local_particles;
     int n_local_particles;
