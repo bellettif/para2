@@ -66,8 +66,8 @@ int main( int argc, char **argv )
 
     double size = sqrt(density * n);
 
-    int block_stride = (int) sqrt(n_proc);
-    int n_block_y = max(block_stride, 1);
+    int block_stride = max((int) sqrt(n_proc), 1);
+    int n_block_y = block_stride;
     int n_block_x = max(n_proc / block_stride, 1);
 
     assert(n_proc == n_block_x * n_block_y);

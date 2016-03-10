@@ -1,0 +1,59 @@
+Proc 6
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 7
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 5
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 0
+Proc 3
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 2
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 1
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Proc 4
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+Size 2
+Block stride = 2
+N block x = 4
+N block y = 2
+Block delta x = 0.5
+Block delta y = 1
+n = 8000, simulation time = 4.52505 seconds, absmin = 0.000068, absavg = 0.675757
+The minimum distance is below 0.4 meaning that some particle is not interacting
+The average distance is below 0.8 meaning that most particles are not interacting
