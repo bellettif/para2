@@ -22,20 +22,104 @@ void assign_particles(region *rs,
         idx = (int) (part.x / delta_x);
         idy = (int) (part.y / delta_y);
 
-        for(int x_offset = -1; x_offset <= 1; ++ x_offset){
-            if(idx + x_offset >= 0 && idx + x_offset < n_block_x) {
-                for (int y_offset = -1; y_offset <= 1; ++y_offset) {
-                    if (idy + y_offset >= 0 && idy + y_offset < n_block_y){
-                        region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
-                        if(idx == idy){
-                            target_region.h_local_particles[target_region.n_local_particles++] = part;
-                        }else{
-                            target_region.h_helper_particles[target_region.n_helper_particles++] = part;
-                        }
-                    }
-                }
+        int x_offset;
+        int y_offset;
+
+        x_offset = 0;
+        y_offset = 0;
+        region & main_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+        main_region.h_local_particles[main_region.n_local_particles++] = part;
+        main_region.h_helper_particles[main_region.n_helper_particles++] = part;
+
+        x_offset = -1;
+        y_offset = 0;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
             }
         }
+
+
+        x_offset = 1;
+        y_offset = 0;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = 0;
+        y_offset = -1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = 0;
+        y_offset = 1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = -1;
+        y_offset = 1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = 1;
+        y_offset = 1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = -1;
+        y_offset = -1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+        x_offset = 1;
+        y_offset = -1;
+        if(idx + x_offset >= 0 && idx + x_offset < n_block_x && idy + y_offset >= 0 && idy + y_offset < n_block_y){
+            region & target_region = rs[(idx + x_offset) * block_stride + (idy + y_offset)];
+            if(part.x >= target_region.x_min && part.x <= target_region.x_max &&
+               part.y >= target_region.y_min && part.y <= target_region.y_max) {
+                target_region.h_helper_particles[target_region.n_helper_particles++] = part;
+            }
+        }
+
+
+
 
     }
 
