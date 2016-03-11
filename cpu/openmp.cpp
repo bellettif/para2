@@ -71,6 +71,7 @@ int main( int argc, char **argv )
         //  compute forces
         //
 #pragma omp parallel for reduction (+:navg) reduction(+:davg) reduction (min:dmin)
+        numthreads = omp_get_num_threads();
         for (int i = 0; i < n; i++) {
             particles[i].ax = particles[i].ay = 0;
             grid.apply_forces(particles[i], dmin, davg, navg);
@@ -84,6 +85,7 @@ int main( int argc, char **argv )
         //  move particles
         //
 #pragma omp parallel for
+        numthreads = omp_get_num_threads();
         for (int i = 0; i < n; i++) {
             move(particles[i]);
         }
