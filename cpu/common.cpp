@@ -139,8 +139,11 @@ void move( particle_t &p )
         p.vx = -p.vx;
     }
 
-    assert(p.x >= 0.0);
-    assert(p.x <= size);
+    if(p.x < 0.0) p.x = 0.0;
+    if(p.x > size) p.x = size;
+
+    //assert(p.x >= 0.0);
+    //assert(p.x <= size);
 
     while( p.y < 0 || p.y > size )
     {
@@ -148,8 +151,12 @@ void move( particle_t &p )
         p.vy = -p.vy;
     }
 
-    assert(p.y >= 0.0);
-    assert(p.y <= size);
+    //assert(p.y >= 0.0);
+    //assert(p.y <= size);
+    
+   if(p.y < 0) p.y = 0.0;
+   if(p.y > size) p.y = size;
+
 
 }
 

@@ -70,6 +70,12 @@ int main( int argc, char **argv )
     int n_block_y = block_stride;
     int n_block_x = max(n_proc / block_stride, 1);
 
+    if(n_proc == 18){
+       block_stride = 3;
+       n_block_y = 3;
+       n_block_x = 6;
+    }
+
     assert(n_proc == n_block_x * n_block_y);
 
     double block_delta_x = size / ((double) n_block_x);
